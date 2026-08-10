@@ -7,8 +7,7 @@
     "disable": [
       "param-type-mismatch",
       "redefined-local",
-      "unbalanced-assignments",
-      "unused"
+      "unbalanced-assignments"
     ]
   }
 }

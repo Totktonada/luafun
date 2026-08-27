@@ -1,0 +1,57 @@
+name: Testing
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testing:
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    strategy:
+      matrix:
+        LUA:
+          - "5.5"
+          - "5.4"
+          - "5.3"
+          - "5.2"
+          - "5.1"
+          - "luajit-v2.1"
+      fail-fast: false
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Disable processing triggers for man-db
+        run: sudo apt-get remove --purge man-db
+
+      - name: Install Lua interpreter ${{ matrix.LUA }}
+        if: matrix.LUA != '5.5'
+        run: |
+          sudo apt-get update
+          case "${{ matrix.LUA }}" in
+            luajit-v2.1) pkg=luajit ;;
+            *)           pkg=lua${{ matrix.LUA }} ;;
+          esac
+          sudo apt-get install -y "$pkg"
+
+      - name: Build PUC Rio Lua 5.5 from source
+        if: matrix.LUA == '5.5'
+        uses: ./.github/actions/build-lua
+        with:
+          version: 5.5.1
+
+      - name: Set LUA_BIN
+        run: |
+          case "${{ matrix.LUA }}" in
+            5.5)         bin="$GITHUB_WORKSPACE/lua-5.5.1/src/lua" ;;
+            luajit-v2.1) bin=luajit ;;
+            *)           bin=lua${{ matrix.LUA }} ;;
+          esac
+          echo "LUA_BIN=$bin" >> "$GITHUB_ENV"
+
+      - name: Run testing
+        working-directory: tests
+        run: ${LUA_BIN} runtest *.lua

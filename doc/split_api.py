@@ -214,6 +214,33 @@ def short_signature(signature):
     return "%s(%s)" % (m.group(1), ", ".join(names))
 
 
+def sort_members(page, fields):
+    """Put the member entries of a type page in the order of `fields`.
+
+    emmylua_doc_cli lists the members of a class alphabetically, in groups
+    ("## methods", "## fields") of "### <Class>.<member>" entries. Each group
+    is sorted by the position of the member in `fields`.
+    """
+    if not fields:
+        return page
+
+    def position(entry):
+        name = re.match(r"### [\w.]*\.(\w+)", entry).group(1)
+        return fields.index(name) if name in fields else len(fields)
+
+    out = []
+    entries = []  # the entries of the group being read
+    for piece in re.split(r"(?m)^(?=#{1,3} )", page):
+        if piece.startswith("### "):
+            entries.append(piece.rstrip())
+        else:
+            out += sorted(entries, key=position)
+            entries = []
+            out.append(piece.rstrip())
+    out += sorted(entries, key=position)
+    return "\n\n".join(piece for piece in out if piece) + "\n"
+
+
 def parse_categories(path):
     """Return a function name -> category resolver built from `fun.lua`."""
     name_cat = {}
@@ -264,6 +291,24 @@ def parse_exports(path):
     for name in re.findall(r"(?m)^exports\.([A-Za-z_]\w*)\s*=", open(path).read()):
         exported.setdefault(name, len(exported))
     return exported
+
+
+def parse_fields(path):
+    """Return class name -> its member names, in the order of the `---@field`
+    lines of its `---@class` comment in `fun.lua`."""
+    fields = {}
+    current = None  # the member names of the class whose comment is read
+    for line in open(path).read().split("\n"):
+        m = re.match(r"^---@class\s+([\w.]+)", line)
+        if m:
+            current = fields.setdefault(m.group(1), [])
+        elif current is not None and line.startswith("---"):
+            m = re.match(r"^---@field\s+([A-Za-z_]\w*)", line)
+            if m:
+                current.append(m.group(1))
+        else:
+            current = None
+    return fields
 
 
 def main():
@@ -327,7 +372,9 @@ def main():
             f.write("\n")
         print("warning: %d function(s) without a category -> other.md" % len(other))
 
-    # remove tag lines rendered on the remaining type pages
+    # remove tag lines rendered on the remaining type pages and put their
+    # members in the order of fun.lua
+    fields = parse_fields(fun_lua)
     types_dir = os.path.join(sphinx_src, "types")
     for root, _dirs, files in os.walk(types_dir):
         for name in files:
@@ -341,6 +388,7 @@ def main():
                 for line in content.split("\n")
                 if not re.match(r"^\s*@category\s", line)
             )
+            cleaned = sort_members(cleaned, fields.get(os.path.splitext(name)[0]))
             if cleaned != content:
                 with open(path, "w") as f:
                     f.write(cleaned)

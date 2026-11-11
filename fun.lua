@@ -1506,7 +1506,7 @@ exports.reduce = exports.foldl
 ---@param param any @the generator parameter
 ---@param state any @the generator state
 ---@return number @the number of elements in the iterator
----@overload fun(a: string|table): number @# **a** (an alias for [len](#operatortablelen))
+---@overload fun(obj: fun.Iterable): number
 local length = function(gen, param, state)
     if gen == ipairs_gen or gen == string_gen then
         return #param - state

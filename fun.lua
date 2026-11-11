@@ -2500,8 +2500,8 @@ exports.chain = chain
 ---@field sub fun(a: number, b: number): number @**a** - **b**
 ---@field truediv fun(a: number, b: number): number @**a** / **b** (true float division)
 ---@field concat fun(a: any, b: any): any @**a** .. **b**
----@field len fun(a: string|table): number @# **a**
----@field length fun(a: string|table): number @# **a** (an alias for [len](#operatortablelen))
+---@field len fun(a: string|table): number @\# **a**
+---@field length fun(a: string|table): number @\# **a** (an alias for [len](#operatortablelen))
 ---@field land fun(a: any, b: any): any @**a** and **b**
 ---@field lor fun(a: any, b: any): any @**a** or **b**
 ---@field lnot fun(a: any): boolean @not **a**

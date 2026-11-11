@@ -910,7 +910,6 @@ local take_while = function(fun, gen, param, state)
     return wrap(take_while_gen, {fun, gen, param}, state)
 end
 methods.take_while = method1(take_while)
---- elements that satisfy **predicate**.
 ---
 ---
 --- Example:
@@ -971,7 +970,6 @@ local drop_n = function(n, gen, param, state)
     return wrap(gen, param, state)
 end
 methods.drop_n = method1(drop_n)
---- elements
 ---
 ---
 --- Example:
@@ -1034,7 +1032,6 @@ local drop_while = function(fun, gen_x, param_x, state_x)
     return wrap(drop_while_gen, {gen_x, param_x, pivot}, state_x)
 end
 methods.drop_while = method1(drop_while)
---- elements that satisfy **predicate**.
 ---
 ---
 --- Example:
@@ -1467,7 +1464,6 @@ local foldl = function(fun, start, gen_x, param_x, state_x)
     return start
 end
 methods.foldl = method2(foldl)
----   first iteration
 ---
 --- The function reduces the iterator from left to right using the binary
 --- operator **accfun** and the initial value **initval**. Equivalent to:
@@ -1560,7 +1556,6 @@ local is_null = function(gen, param, state)
     return gen(param, deepcopy(state)) == nil
 end
 methods.is_null = method0(is_null)
---- otherwise.
 ---
 --- Return true when the iterator is empty or finished, and false otherwise.
 ---

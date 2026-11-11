@@ -1295,7 +1295,7 @@ local filter = function(fun, gen, param, state)
     return wrap(filter_gen, {fun, gen, param}, state)
 end
 methods.filter = method1(filter)
---- Return a new iterator of those elements that satisfy the **predicate**.
+--- Return a new iterator of those elements that satisfy the predicate **fun**.
 ---
 --- ```{note}
 --- Multireturn iterators are supported but can cause performance regressions.
@@ -1345,7 +1345,7 @@ end
 methods.grep = method1(grep)
 --- Filter the iterator by a regular expression or a predicate.
 ---
---- If **regexp_or_predicate** is a string then the parameter is used as a
+--- If **fun_or_regexp** is a string then the parameter is used as a
 --- regular expression to build a filtering predicate. Otherwise the function is
 --- just an alias for [filter](filtering.md#funfilter). Equivalent to:
 ---
@@ -1448,7 +1448,7 @@ end
 
 ---@category Reducing
 ---@param fun fun.Reducer @an accumulating function
----@param start any @an initial value that passed to **accfun** on the first iteration
+---@param start any @an initial value that passed to **fun** on the first iteration
 ---@param gen_x fun.Generator @the generator function
 ---@param param_x any @the generator parameter
 ---@param state_x any @the generator state
@@ -1466,7 +1466,7 @@ end
 methods.foldl = method2(foldl)
 ---
 --- The function reduces the iterator from left to right using the binary
---- operator **accfun** and the initial value **initval**. Equivalent to:
+--- operator **fun** and the initial value **start**. Equivalent to:
 ---
 --- ```lua
 --- local val = start
@@ -1626,7 +1626,8 @@ local all = function(fun, gen_x, param_x, state_x)
     return state_x == nil
 end
 methods.all = method1(all)
---- Return true if all return values of the iterator satisfy the **predicate**.
+--- Return true if all return values of the iterator satisfy the predicate
+--- **fun**.
 ---
 --- [every](reducing.md#funevery) is an alias of all.
 ---
@@ -1661,7 +1662,7 @@ local any = function(fun, gen_x, param_x, state_x)
 end
 methods.any = method1(any)
 --- Return true if at least one return value of the iterator satisfies the
---- **predicate**. The iteration stops on the first such value. Therefore,
+--- predicate **fun**. The iteration stops on the first such value. Therefore,
 --- infinity iterators that have at least one satisfying value might work.
 ---
 --- [some](reducing.md#funsome) is an alias of any.

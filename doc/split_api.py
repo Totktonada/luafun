@@ -63,9 +63,10 @@ INTROS = {
     ),
 }
 
-# slug -> ordered (sub-heading, [function names]) groups.  A sub-heading is
-# written before the first function of its group and the function headings
-# are demoted to level 3 so that they nest under it.
+# slug -> ordered (sub-heading, [function names]) groups.  The page lists the
+# functions in this order, a sub-heading is written before the first function
+# of its group and the function headings are demoted to level 3 so that they
+# nest under it.
 SECTIONS = {
     "generators": [
         ("Finite Generators", ["range"]),
@@ -88,6 +89,24 @@ SECTIONS = {
           "max", "maximum", "max_by", "maximum_by"]),
     ],
 }
+
+
+def sort_functions(slug, sections, exported):
+    """Put the functions of a page in the order of the old documentation.
+
+    emmylua_doc_cli lists them alphabetically. A page with sub-headings takes
+    the order of SECTIONS, any other page the order in which fun.lua exports
+    the functions (`exported`: name -> position).
+    """
+    listed = [name for _, names in SECTIONS.get(slug, []) for name in names]
+
+    def position(section):
+        name = re.match(r"## fun\.([A-Za-z_]\w*)", section).group(1)
+        if name in listed:
+            return (0, listed.index(name))
+        return (1, exported.get(name, len(exported)))
+
+    return sorted(sections, key=position)
 
 
 def add_subheadings(slug, sections):
@@ -157,9 +176,18 @@ def parse_categories(path):
     return resolve
 
 
+def parse_exports(path):
+    """Return name -> position of each `exports.<name> = ...` in `fun.lua`."""
+    exported = {}
+    for name in re.findall(r"(?m)^exports\.([A-Za-z_]\w*)\s*=", open(path).read()):
+        exported.setdefault(name, len(exported))
+    return exported
+
+
 def main():
     sphinx_src, fun_lua = sys.argv[1], sys.argv[2]
     resolve = parse_categories(fun_lua)
+    exported = parse_exports(fun_lua)
 
     modules_dir = os.path.join(sphinx_src, "modules")
     page = os.path.join(modules_dir, "fun.md")
@@ -206,7 +234,8 @@ def main():
             f.write("# %s\n\n" % title)
             if slug in INTROS:
                 f.write(INTROS[slug] + "\n\n")
-            f.write("\n\n".join(add_subheadings(slug, groups[title])))
+            sections = sort_functions(slug, groups[title], exported)
+            f.write("\n\n".join(add_subheadings(slug, sections)))
             f.write("\n")
     if other:
         with open(os.path.join(sphinx_src, "other.md"), "w") as f:

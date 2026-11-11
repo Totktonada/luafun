@@ -402,7 +402,8 @@ end
 ---@param stop? number @an endpoint of the interval (see below)
 ---@param step? number @a step
 ---@return fun.Iterator|fun.Generator, any, any @an iterator over the arithmetic progression
----@overload fun(start?: number, stop?: number, step?: number): fun.Iterator
+---@overload fun(stop: number): fun.Iterator
+---@overload fun(start: number, stop: number, step?: number): fun.Iterator
 local range = function(start, stop, step)
     if step == nil then
         if stop == nil then

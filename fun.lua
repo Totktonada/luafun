@@ -1156,11 +1156,8 @@ local index = function(x, gen, param, state)
 end
 methods.index = method1(index)
 ---
---- Return the position of the first element that equals `x`.
----
---- The position is 1-based. The function returns the position of the first
---- element in the given iterator which is equal (using `==`) to the query
---- element, or `nil` if there is no such element.
+--- Return the position of the first element that equals `x` (using `==`),
+--- or `nil` if there is no such element. The position is 1-based.
 ---
 --- [index_of](indexing.md#funindex_of) and [elem_index](indexing.md#funelem_index) are aliases of index.
 ---

@@ -1382,7 +1382,7 @@ methods.grep = method1(grep)
 exports.grep = export1(grep)
 
 ---@category Filtering
----@param fun fun.Predicate @a value to find
+---@param fun fun.Predicate @a predicate over iteration values
 ---@param gen fun.Generator @the generator function
 ---@param param any @the generator parameter
 ---@param state any @the generator state

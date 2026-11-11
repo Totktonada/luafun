@@ -512,7 +512,7 @@ local duplicate_gen = function(param_x, state_x)
 end
 
 ---@category Generators
----@vararg any @objects to duplicate
+---@param ... any @objects to duplicate
 ---@return fun.Iterator, any, any @an iterator that returns the values indefinitely
 ---@overload fun(...): fun.Iterator
 local duplicate = function(...)
@@ -2188,7 +2188,7 @@ local numargs = function(...)
 end
 
 ---@category Compositions
----@vararg fun.Iterable @iterators to zip
+---@param ... fun.Iterable @iterators to zip
 ---@return fun.Iterator, any, any @an iterator whose i-th value holds the i-th element of each iterator
 ---@overload fun(...: fun.Iterable): fun.Iterator
 local zip = function(...)
@@ -2342,7 +2342,7 @@ chain_gen_r1 = function(param, state)
 end
 
 ---@category Compositions
----@vararg fun.Iterable @iterators to chain
+---@param ... fun.Iterable @iterators to chain
 ---@return fun.Iterator, any, any @a consecutive iterator from the sources
 ---@overload fun(...: fun.Iterable): fun.Iterator
 local chain = function(...)

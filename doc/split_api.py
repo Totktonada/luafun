@@ -241,6 +241,33 @@ def sort_members(page, fields):
     return "\n\n".join(piece for piece in out if piece) + "\n"
 
 
+# Type pages whose member entries show only their signature and text. The
+# operators are `---@field`s without parameter or return texts, and
+# emmylua_doc_cli fills the entry of such a field with the overloads,
+# parameters and returns of a documented function of the same name in
+# fun.lua: the `length` operator gets those of the reducer fun.length.
+OWN_DOCS_ONLY = ("fun.OperatorTable",)
+
+
+def drop_generated_parts(page):
+    """Remove the Overloads, Parameters and Returns parts of the entries."""
+    out = []
+    skipping = False  # in a generated part: its label, list or code block
+    in_code = False  # in a code block of a generated part
+    for line in page.split("\n"):
+        if in_code:  # up to the closing fence
+            in_code = not line.startswith("```")
+        elif line in GENERATED_LABELS:
+            skipping = True
+        elif skipping and line.startswith("```"):
+            in_code = True
+        elif skipping and line.strip() and not line.startswith("- "):
+            skipping = False  # the text of the entry
+        if not skipping:
+            out.append(line)
+    return "\n".join(out)
+
+
 def parse_categories(path):
     """Return a function name -> category resolver built from `fun.lua`."""
     name_cat = {}
@@ -388,7 +415,10 @@ def main():
                 for line in content.split("\n")
                 if not re.match(r"^\s*@category\s", line)
             )
-            cleaned = sort_members(cleaned, fields.get(os.path.splitext(name)[0]))
+            class_name = os.path.splitext(name)[0]
+            cleaned = sort_members(cleaned, fields.get(class_name))
+            if class_name in OWN_DOCS_ONLY:
+                cleaned = drop_generated_parts(cleaned)
             if cleaned != content:
                 with open(path, "w") as f:
                     f.write(cleaned)

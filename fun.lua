@@ -2485,7 +2485,8 @@ exports.chain = chain
 ---@field add fun(a: number, b: number): number @**a** + **b**
 ---@field div fun(a: number, b: number): number @**a** / **b** (an alias for [truediv](#operatortabletruediv))
 ---@field floordiv fun(a: number, b: number): number @math.floor(**a** / **b**)
----@field intdiv fun(a: number, b: number): number @C-like integer division
+---@field intdiv fun(a: number, b: number): number @math.floor(**a** / **b**) if **a** >= 0,
+--- else math.ceil(**a** / **b**)
 ---@field mod fun(a: number, b: number): number @**a** % **b**
 ---@field mul fun(a: number, b: number): number @**a** * **b**
 ---@field neq fun(a: number): number @-**a**

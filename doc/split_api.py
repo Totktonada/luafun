@@ -132,6 +132,88 @@ def add_subheadings(slug, sections):
     return out
 
 
+# The labels emmylua_doc_cli writes above the generated parts of an entry.
+GENERATED_LABELS = ("**Overloads**", "**Parameters**", "**Returns**")
+# The whole own text of an alias's entry (`exports.xrepeat = duplicate`).
+ALIAS_TEXT = re.compile(r"An alias for \[[^\]]+\]\([^)]*\)\.")
+
+
+def compact_alias(section):
+    """Shorten the entry of an alias to the form of the old documentation.
+
+    For `exports.xrepeat = duplicate` emmylua_doc_cli repeats the entry of
+    duplicate -- its typed signature, overloads, parameters and returns --
+    above the alias's own text. The old documentation gave the parameter
+    names and that text only, and so does the result:
+
+        ## fun.xrepeat
+        ---
+        ```lua
+        function fun.xrepeat(...)
+        ```
+
+        An alias for [duplicate](generators.md#funduplicate).
+
+    An entry with any other text is returned as it is.
+    """
+    lines = section.split("\n")
+    signature = None  # the first code block: the entry's own signature
+    block = None  # the lines of the code block being read
+    text = []  # the lines outside the code blocks, the lists and the labels
+    for line in lines[1:]:
+        if line.startswith("```"):
+            if block is None:  # an opening fence
+                block = []
+            else:  # a closing fence
+                if signature is None:
+                    signature = "\n".join(block)
+                block = None
+        elif block is not None:
+            block.append(line)
+        elif (line.strip() and line != "---" and not line.startswith("- ")
+              and line not in GENERATED_LABELS):
+            text.append(line.strip())
+    if len(text) != 1 or not ALIAS_TEXT.fullmatch(text[0]):
+        return section
+    out = [lines[0], "---"]
+    call = signature and short_signature(signature)
+    if call:
+        out += ["```lua", "function " + call, "```", ""]
+    out.append(text[0])
+    return "\n".join(out)
+
+
+def short_signature(signature):
+    """`function fun.f(a: T, ...: U)-> R` -> `fun.f(a, ...)`.
+
+    None for a code block that is not a function's signature (fun.op shows
+    the type of a table).
+    """
+    m = re.match(r"function\s+([\w.:]+)\(", signature)
+    if not m:
+        return None
+    params = signature[m.end():]
+    names = []
+    start = 0  # where the current parameter begins in params
+    depth = 0  # the brackets open inside a parameter's type
+    for t in re.finditer(r"->|[()\[\]{}<>,]", params):
+        token = t.group(0)
+        if token == "->":  # the arrow of a function type, not a bracket
+            continue
+        if token in ("(", "[", "{", "<"):
+            depth += 1
+        elif token == ")" and depth == 0:  # the end of the parameter list
+            names.append(params[start:t.start()])
+            break
+        elif token in (")", "]", "}", ">"):
+            depth -= 1
+        elif depth == 0:  # a comma between two parameters
+            names.append(params[start:t.start()])
+            start = t.end()
+    names = [name.split(":")[0].strip() for name in names if name.strip()]
+    return "%s(%s)" % (m.group(1), ", ".join(names))
+
+
 def parse_categories(path):
     """Return a function name -> category resolver built from `fun.lua`."""
     name_cat = {}
@@ -219,6 +301,7 @@ def main():
         # Accept the old hardcoded "M." prefix as well and normalize it so
         # that the links inside the annotations (#funx) keep working.
         section = re.sub(r"^###\s+(?:fun|M)\.", "## fun.", section, count=1)
+        section = compact_alias(section)
         title = resolve(m.group(1))
         if title in TITLES:
             groups[title].append(section)

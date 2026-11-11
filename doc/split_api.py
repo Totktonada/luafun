@@ -268,6 +268,58 @@ def drop_generated_parts(page):
     return "\n".join(out)
 
 
+# Classes documented in an entry of a chapter instead of on a type page of
+# their own: class -> (chapter slug, entry). fun.OperatorTable is the type of
+# fun.operator and of nothing else, and the operators are what the Operators
+# chapter is about.
+INLINE_CLASSES = {"fun.OperatorTable": ("operators", "fun.operator")}
+
+
+def inline_class(chapter, entry, class_page):
+    """Move the text and the members of a class into an entry of a chapter.
+
+    The entry's code block gives the class as the entry's type, which
+    emmylua_doc_cli writes as `{  }` or as all the fields on one line, at
+    random. The block goes, and the class's text and member entries follow
+    the entry's own text, the members nested under the entry's heading:
+
+        ## fun.operator
+        ---
+        Lua operators exported as functions
+
+        A table of Lua operators exported as intrinsic functions, ...
+
+        ### OperatorTable.lt
+        ---
+        ...
+    """
+    # the class page: "# class X", "- namespace: fun", the text and a rule,
+    # then "## methods" over the "### X.member" entries
+    text = ""
+    members = []
+    for piece in re.split(r"(?m)^(?=#{1,3} )", class_page):
+        if piece.startswith("# "):
+            lines = piece.split("\n")[1:]
+            text = "\n".join(line for line in lines
+                             if not line.startswith("- namespace: "))
+            text = re.sub(r"\n+---$", "", text.strip("\n"))
+        elif piece.startswith("### "):
+            members.append(piece.strip("\n"))
+
+    out = []
+    found = False
+    for section in re.split(r"(?m)^(?=## )", chapter):
+        if section.startswith("## %s\n" % entry):
+            found = True
+            own = re.sub(r"(?s)```lua\n.*?\n```\n+", "", section, count=1)
+            tail = section[len(section.rstrip("\n")):]
+            section = "\n\n".join([own.rstrip("\n"), text] + members) + tail
+        out.append(section)
+    if not found:
+        sys.exit("error: no entry %s to take its class" % entry)
+    return "".join(out)
+
+
 def parse_categories(path):
     """Return a function name -> category resolver built from `fun.lua`."""
     name_cat = {}
@@ -422,6 +474,18 @@ def main():
             if cleaned != content:
                 with open(path, "w") as f:
                     f.write(cleaned)
+
+    # move each class of INLINE_CLASSES into its chapter and drop its page
+    for class_name, (slug, entry) in INLINE_CLASSES.items():
+        class_path = os.path.join(types_dir, class_name + ".md")
+        chapter_path = os.path.join(sphinx_src, slug + ".md")
+        with open(class_path) as f:
+            class_page = f.read()
+        with open(chapter_path) as f:
+            chapter = f.read()
+        with open(chapter_path, "w") as f:
+            f.write(inline_class(chapter, entry, class_page))
+        os.remove(class_path)
 
     # the flat pages are replaced by the per-category ones
     for flat in (page, os.path.join(sphinx_src, "types", "fun.md")):

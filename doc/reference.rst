@@ -24,7 +24,6 @@ Types
    :maxdepth: 1
 
    types/fun.Iterator
-   types/fun.OperatorTable
    types/fun.Generator
    types/fun.Iterable
    types/fun.Predicate
